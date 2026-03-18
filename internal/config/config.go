@@ -6,6 +6,23 @@ import (
 	"strconv"
 )
 
+const (
+	DefaultStatusInbox = "Backlog"
+	DefaultStatusPlan  = "Plan"
+	DefaultStatusReady = "Ready"
+	DefaultStatusDoing = "In progress"
+	DefaultPlanLimit   = 3
+)
+
+// getEnvOrDefault returns the value of the environment variable named by the key,
+// or the default value if the variable is not set or empty.
+func getEnvOrDefault(key, defaultValue string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return defaultValue
+}
+
 // Config holds application configuration loaded from environment variables.
 type Config struct {
 	Token         string
@@ -41,7 +58,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("failed to parse GHPP_PROJECT_NUMBER: %w", err)
 	}
 
-	planLimit := 0
+	planLimit := DefaultPlanLimit
 	if v := os.Getenv("GHPP_PLAN_LIMIT"); v != "" {
 		planLimit, err = strconv.Atoi(v)
 		if err != nil {
@@ -53,10 +70,10 @@ func Load() (*Config, error) {
 		Token:         token,
 		Owner:         owner,
 		ProjectNumber: projectNumber,
-		StatusInbox:   os.Getenv("GHPP_STATUS_INBOX"),
-		StatusPlan:    os.Getenv("GHPP_STATUS_PLAN"),
-		StatusReady:   os.Getenv("GHPP_STATUS_READY"),
-		StatusDoing:   os.Getenv("GHPP_STATUS_DOING"),
+		StatusInbox:   getEnvOrDefault("GHPP_STATUS_INBOX", DefaultStatusInbox),
+		StatusPlan:    getEnvOrDefault("GHPP_STATUS_PLAN", DefaultStatusPlan),
+		StatusReady:   getEnvOrDefault("GHPP_STATUS_READY", DefaultStatusReady),
+		StatusDoing:   getEnvOrDefault("GHPP_STATUS_DOING", DefaultStatusDoing),
 		PlanLimit:     planLimit,
 	}, nil
 }

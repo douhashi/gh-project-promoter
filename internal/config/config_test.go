@@ -45,6 +45,11 @@ func TestLoad(t *testing.T) {
 				Token:         "ghp_token",
 				Owner:         "owner",
 				ProjectNumber: 1,
+				StatusInbox:   "Backlog",
+				StatusPlan:    "Plan",
+				StatusReady:   "Ready",
+				StatusDoing:   "In progress",
+				PlanLimit:     3,
 			},
 		},
 		{
