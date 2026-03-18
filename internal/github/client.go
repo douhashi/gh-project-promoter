@@ -212,7 +212,7 @@ type updateItemStatusMutation struct {
 	UpdateProjectV2ItemFieldValue struct {
 		ProjectV2Item struct {
 			ID string
-		}
+		} `graphql:"projectV2Item"`
 	} `graphql:"updateProjectV2ItemFieldValue(input: $input)"`
 }
 
