@@ -1,0 +1,9 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt-check:
+      glob: "*.go"
+      run: gofmt -l {staged_files} && test -z "$(gofmt -l {staged_files})"
+    lint:
+      glob: "*.go"
+      run: golangci-lint run ./...

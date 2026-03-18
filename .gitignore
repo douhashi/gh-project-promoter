@@ -1,0 +1,18 @@
+# Binary
+gh-project-promoter
+
+# Environment
+.env
+
+# Temp
+.tmp/
+
+# Go
+*.exe
+*.test
+*.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
