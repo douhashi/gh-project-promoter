@@ -23,16 +23,16 @@ export GHPP_PROJECT_NUMBER=1
 
 ## 環境変数
 
-| 変数名 | 必須 | 説明 |
-|---|---|---|
-| `GH_TOKEN` | Yes | GitHub API トークン |
-| `GHPP_OWNER` | Yes | GitHub Organization / User 名 |
-| `GHPP_PROJECT_NUMBER` | Yes | GitHub Projects の番号 |
-| `GHPP_STATUS_INBOX` | No | inbox に対応するステータス名 |
-| `GHPP_STATUS_PLAN` | No | plan に対応するステータス名 |
-| `GHPP_STATUS_READY` | No | ready に対応するステータス名 |
-| `GHPP_STATUS_DOING` | No | doing に対応するステータス名 |
-| `GHPP_PLAN_LIMIT` | No | 計画フェーズの昇格上限数 |
+| 変数名 | 必須 | デフォルト値 | 説明 |
+|---|---|---|---|
+| `GH_TOKEN` | Yes | - | GitHub API トークン |
+| `GHPP_OWNER` | Yes | - | GitHub Organization / User 名 |
+| `GHPP_PROJECT_NUMBER` | Yes | - | GitHub Projects の番号 |
+| `GHPP_STATUS_INBOX` | No | `Backlog` | inbox に対応するステータス名 |
+| `GHPP_STATUS_PLAN` | No | `Plan` | plan に対応するステータス名 |
+| `GHPP_STATUS_READY` | No | `Ready` | ready に対応するステータス名 |
+| `GHPP_STATUS_DOING` | No | `In progress` | doing に対応するステータス名 |
+| `GHPP_PLAN_LIMIT` | No | `3` | 計画フェーズの昇格上限数 |
 
 ## ライセンス
 
