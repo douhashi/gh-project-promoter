@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -38,42 +39,90 @@ type Config struct {
 // Load reads environment variables and returns a Config.
 // Required variables: GH_TOKEN, GHPP_OWNER, GHPP_PROJECT_NUMBER.
 func Load() (*Config, error) {
-	token := os.Getenv("GH_TOKEN")
-	if token == "" {
-		return nil, fmt.Errorf("failed to load config: GH_TOKEN is required")
+	return LoadWithArgs(nil)
+}
+
+// LoadWithArgs reads configuration from command-line flags and environment variables.
+// Priority: flags > environment variables > default values.
+// If args is nil, only environment variables and defaults are used.
+func LoadWithArgs(args []string) (*Config, error) {
+	fs := flag.NewFlagSet("ghpp", flag.ContinueOnError)
+
+	token := fs.String("token", "", "GitHub API token (env: GH_TOKEN)")
+	owner := fs.String("owner", "", "GitHub Organization / User name (env: GHPP_OWNER)")
+	projectNumber := fs.String("project-number", "", "GitHub Projects number (env: GHPP_PROJECT_NUMBER)")
+	statusInbox := fs.String("status-inbox", "", "Status name for inbox (env: GHPP_STATUS_INBOX)")
+	statusPlan := fs.String("status-plan", "", "Status name for plan (env: GHPP_STATUS_PLAN)")
+	statusReady := fs.String("status-ready", "", "Status name for ready (env: GHPP_STATUS_READY)")
+	statusDoing := fs.String("status-doing", "", "Status name for doing (env: GHPP_STATUS_DOING)")
+	planLimit := fs.String("plan-limit", "", "Plan promotion limit (env: GHPP_PLAN_LIMIT)")
+
+	if args != nil {
+		if err := fs.Parse(args); err != nil {
+			return nil, fmt.Errorf("failed to parse flags: %w", err)
+		}
 	}
 
-	owner := os.Getenv("GHPP_OWNER")
-	if owner == "" {
-		return nil, fmt.Errorf("failed to load config: GHPP_OWNER is required")
+	// Track which flags were explicitly set
+	flagSet := make(map[string]bool)
+	fs.Visit(func(f *flag.Flag) {
+		flagSet[f.Name] = true
+	})
+
+	// Helper: resolve value with priority flag > env > default
+	resolve := func(flagName, flagVal, envKey, defaultVal string) string {
+		if flagSet[flagName] {
+			return flagVal
+		}
+		return getEnvOrDefault(envKey, defaultVal)
 	}
 
-	projectNumberStr := os.Getenv("GHPP_PROJECT_NUMBER")
-	if projectNumberStr == "" {
-		return nil, fmt.Errorf("failed to load config: GHPP_PROJECT_NUMBER is required")
+	// Resolve token
+	resolvedToken := resolve("token", *token, "GH_TOKEN", "")
+	if resolvedToken == "" {
+		return nil, fmt.Errorf("failed to load config: GH_TOKEN is required (use --token flag or GH_TOKEN env)")
 	}
 
-	projectNumber, err := strconv.Atoi(projectNumberStr)
+	// Resolve owner
+	resolvedOwner := resolve("owner", *owner, "GHPP_OWNER", "")
+	if resolvedOwner == "" {
+		return nil, fmt.Errorf("failed to load config: GHPP_OWNER is required (use --owner flag or GHPP_OWNER env)")
+	}
+
+	// Resolve project number
+	resolvedProjectNumberStr := resolve("project-number", *projectNumber, "GHPP_PROJECT_NUMBER", "")
+	if resolvedProjectNumberStr == "" {
+		return nil, fmt.Errorf("failed to load config: GHPP_PROJECT_NUMBER is required (use --project-number flag or GHPP_PROJECT_NUMBER env)")
+	}
+	resolvedProjectNumber, err := strconv.Atoi(resolvedProjectNumberStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse GHPP_PROJECT_NUMBER: %w", err)
 	}
 
-	planLimit := DefaultPlanLimit
-	if v := os.Getenv("GHPP_PLAN_LIMIT"); v != "" {
-		planLimit, err = strconv.Atoi(v)
+	// Resolve optional string values
+	resolvedStatusInbox := resolve("status-inbox", *statusInbox, "GHPP_STATUS_INBOX", DefaultStatusInbox)
+	resolvedStatusPlan := resolve("status-plan", *statusPlan, "GHPP_STATUS_PLAN", DefaultStatusPlan)
+	resolvedStatusReady := resolve("status-ready", *statusReady, "GHPP_STATUS_READY", DefaultStatusReady)
+	resolvedStatusDoing := resolve("status-doing", *statusDoing, "GHPP_STATUS_DOING", DefaultStatusDoing)
+
+	// Resolve plan limit
+	resolvedPlanLimit := DefaultPlanLimit
+	resolvedPlanLimitStr := resolve("plan-limit", *planLimit, "GHPP_PLAN_LIMIT", "")
+	if resolvedPlanLimitStr != "" {
+		resolvedPlanLimit, err = strconv.Atoi(resolvedPlanLimitStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse GHPP_PLAN_LIMIT: %w", err)
 		}
 	}
 
 	return &Config{
-		Token:         token,
-		Owner:         owner,
-		ProjectNumber: projectNumber,
-		StatusInbox:   getEnvOrDefault("GHPP_STATUS_INBOX", DefaultStatusInbox),
-		StatusPlan:    getEnvOrDefault("GHPP_STATUS_PLAN", DefaultStatusPlan),
-		StatusReady:   getEnvOrDefault("GHPP_STATUS_READY", DefaultStatusReady),
-		StatusDoing:   getEnvOrDefault("GHPP_STATUS_DOING", DefaultStatusDoing),
-		PlanLimit:     planLimit,
+		Token:         resolvedToken,
+		Owner:         resolvedOwner,
+		ProjectNumber: resolvedProjectNumber,
+		StatusInbox:   resolvedStatusInbox,
+		StatusPlan:    resolvedStatusPlan,
+		StatusReady:   resolvedStatusReady,
+		StatusDoing:   resolvedStatusDoing,
+		PlanLimit:     resolvedPlanLimit,
 	}, nil
 }

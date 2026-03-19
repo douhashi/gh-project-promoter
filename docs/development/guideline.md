@@ -10,6 +10,7 @@
 |---|---|
 | GitHub GraphQL API | [githubv4](https://github.com/shurcooL/githubv4) |
 | 環境変数 (.env) | [godotenv](https://github.com/joho/godotenv) |
+| CLI オプション解析 | [flag](https://pkg.go.dev/flag) (Go 標準ライブラリ) |
 
 ## ディレクトリ構成（予定）
 

@@ -27,9 +27,11 @@ func main() {
 		return
 	}
 
+	subArgs := os.Args[2:]
+
 	switch os.Args[1] {
 	case "fetch":
-		cfg, err := config.Load()
+		cfg, err := config.LoadWithArgs(subArgs)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
@@ -40,7 +42,7 @@ func main() {
 			os.Exit(1)
 		}
 	case "promote":
-		cfg, err := config.Load()
+		cfg, err := config.LoadWithArgs(subArgs)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
