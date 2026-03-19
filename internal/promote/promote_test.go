@@ -22,6 +22,10 @@ type updateCall struct {
 	StatusName string
 }
 
+func (m *mockPromoter) FetchProjectItems(_ context.Context, _ string, _ int) ([]github.ProjectItem, error) {
+	return nil, nil
+}
+
 func (m *mockPromoter) FetchProjectMeta(_ context.Context, _ string, _ int) (*github.ProjectMeta, error) {
 	return m.meta, m.metaErr
 }

@@ -20,8 +20,7 @@
 ├── internal/
 │   ├── config/      # 環境変数・設定の読み込み
 │   ├── github/      # GitHub API クライアント
-│   ├── promote/     # 昇格ロジック
-│   └── cache/       # ローカルキャッシュ管理
+│   └── promote/     # 昇格ロジック
 ├── docs/            # ドキュメント
 ├── .env.example     # 環境変数のサンプル
 └── go.mod

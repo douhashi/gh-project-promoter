@@ -9,13 +9,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// ItemFetcher abstracts fetching project items for testability.
-type ItemFetcher interface {
-	FetchProjectItems(ctx context.Context, owner string, projectNumber int) ([]ProjectItem, error)
-}
-
 // ItemPromoter abstracts promoting project items for testability.
 type ItemPromoter interface {
+	FetchProjectItems(ctx context.Context, owner string, projectNumber int) ([]ProjectItem, error)
 	FetchProjectMeta(ctx context.Context, owner string, projectNumber int) (*ProjectMeta, error)
 	UpdateItemStatus(ctx context.Context, meta *ProjectMeta, itemID string, statusName string) error
 }

@@ -5,20 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/douhashi/gh-project-promoter/internal/cache"
 	"github.com/douhashi/gh-project-promoter/internal/config"
 	"github.com/douhashi/gh-project-promoter/internal/github"
 	"github.com/douhashi/gh-project-promoter/internal/promote"
 )
 
-// RunPromote loads cached items, runs the promotion logic, and prints the results as JSON.
+// RunPromote fetches project items via the API, runs the promotion logic, and prints the results as JSON.
 func RunPromote(ctx context.Context, cfg *config.Config, promoter github.ItemPromoter) error {
-	data, err := cache.Load()
+	items, err := promoter.FetchProjectItems(ctx, cfg.Owner, cfg.ProjectNumber)
 	if err != nil {
-		return fmt.Errorf("failed to load cache: %w", err)
+		return fmt.Errorf("failed to fetch project items: %w", err)
 	}
 
-	results, err := promote.Run(ctx, cfg, data.Items, promoter)
+	results, err := promote.Run(ctx, cfg, items, promoter)
 	if err != nil {
 		return fmt.Errorf("failed to run promote: %w", err)
 	}
