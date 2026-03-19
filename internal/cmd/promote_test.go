@@ -5,16 +5,21 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/douhashi/gh-project-promoter/internal/cache"
 	"github.com/douhashi/gh-project-promoter/internal/config"
 	"github.com/douhashi/gh-project-promoter/internal/github"
 )
 
 // mockPromoter implements github.ItemPromoter for testing.
 type mockPromoter struct {
+	items     []github.ProjectItem
+	itemsErr  error
 	meta      *github.ProjectMeta
 	metaErr   error
 	updateErr error
+}
+
+func (m *mockPromoter) FetchProjectItems(_ context.Context, _ string, _ int) ([]github.ProjectItem, error) {
+	return m.items, m.itemsErr
 }
 
 func (m *mockPromoter) FetchProjectMeta(_ context.Context, _ string, _ int) (*github.ProjectMeta, error) {
@@ -40,44 +45,39 @@ func TestRunPromote(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		items    []github.ProjectItem
 		promoter *mockPromoter
 		wantErr  bool
 	}{
 		{
 			name: "success with items",
-			items: []github.ProjectItem{
-				{ID: "1", Title: "Issue 1", URL: "https://github.com/owner/repo/issues/1", Status: "Backlog"},
+			promoter: &mockPromoter{
+				items: []github.ProjectItem{
+					{ID: "1", Title: "Issue 1", URL: "https://github.com/owner/repo/issues/1", Status: "Backlog"},
+				},
+				meta: defaultMeta,
 			},
-			promoter: &mockPromoter{meta: defaultMeta},
-			wantErr:  false,
+			wantErr: false,
 		},
 		{
-			name:     "success with empty items",
-			items:    []github.ProjectItem{},
-			promoter: &mockPromoter{meta: defaultMeta},
-			wantErr:  false,
+			name: "success with empty items",
+			promoter: &mockPromoter{
+				items: []github.ProjectItem{},
+				meta:  defaultMeta,
+			},
+			wantErr: false,
 		},
 		{
 			name: "promoter error",
-			items: []github.ProjectItem{
-				{ID: "1", Title: "Issue 1", URL: "https://github.com/owner/repo/issues/1", Status: "Backlog"},
+			promoter: &mockPromoter{
+				items:   []github.ProjectItem{{ID: "1", Title: "Issue 1", URL: "https://github.com/owner/repo/issues/1", Status: "Backlog"}},
+				metaErr: errors.New("API error"),
 			},
-			promoter: &mockPromoter{metaErr: errors.New("API error")},
-			wantErr:  true,
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tmpDir := t.TempDir()
-			t.Setenv("HOME", tmpDir)
-
-			// Store items in cache
-			if err := cache.Store(tt.items); err != nil {
-				t.Fatalf("failed to store cache: %v", err)
-			}
-
 			cfg := &config.Config{
 				Owner:         "testowner",
 				ProjectNumber: 1,
@@ -101,21 +101,14 @@ func TestRunPromote(t *testing.T) {
 	}
 }
 
-func TestRunPromote_NoCacheFile(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
-
+func TestRunPromote_FetchError(t *testing.T) {
 	cfg := &config.Config{
 		Owner:         "testowner",
 		ProjectNumber: 1,
 	}
 
 	mp := &mockPromoter{
-		meta: &github.ProjectMeta{
-			ProjectID: "PVT_001",
-			FieldID:   "PVTSSF_001",
-			Options:   map[string]string{},
-		},
+		itemsErr: errors.New("API error"),
 	}
 
 	err := RunPromote(context.Background(), cfg, mp)

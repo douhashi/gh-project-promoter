@@ -23,24 +23,13 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("ghpp - GitHub Project Promoter")
 		fmt.Println("Usage: ghpp <command>")
-		fmt.Println("Commands: fetch, promote")
+		fmt.Println("Commands: promote")
 		return
 	}
 
 	subArgs := os.Args[2:]
 
 	switch os.Args[1] {
-	case "fetch":
-		cfg, err := config.LoadWithArgs(subArgs)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
-		}
-		client := github.NewClient(cfg.Token)
-		if err := cmd.RunFetch(context.Background(), cfg, client); err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
-		}
 	case "promote":
 		cfg, err := config.LoadWithArgs(subArgs)
 		if err != nil {
