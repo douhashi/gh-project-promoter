@@ -15,12 +15,22 @@ type ProjectMeta struct {
 	Options   map[string]string // ステータス名 -> Option ID のマップ
 }
 
-// PromoteResult represents the outcome of a single promote attempt.
-type PromoteResult struct {
+// PromotedItem represents a single item that was promoted.
+type PromotedItem struct {
 	Item     ProjectItem `json:"item"`
-	Action   string      `json:"action"` // "promoted" or "skipped"
-	Reason   string      `json:"reason,omitempty"`
-	ToStatus string      `json:"to_status,omitempty"`
+	ToStatus string      `json:"to_status"`
+}
+
+// SkippedItem represents a single item that was skipped.
+type SkippedItem struct {
+	Item   ProjectItem `json:"item"`
+	Reason string      `json:"reason"`
+}
+
+// PhaseResults groups promoted and skipped items for one phase.
+type PhaseResults struct {
+	Promoted []PromotedItem `json:"promoted"`
+	Skipped  []SkippedItem  `json:"skipped"`
 }
 
 // PhaseSummary holds counts for a single phase or the overall response.
@@ -32,8 +42,8 @@ type PhaseSummary struct {
 
 // PhaseResult groups the summary and individual results for one phase.
 type PhaseResult struct {
-	Summary PhaseSummary    `json:"summary"`
-	Results []PromoteResult `json:"results"`
+	Summary PhaseSummary `json:"summary"`
+	Results PhaseResults `json:"results"`
 }
 
 // PromotePhases holds results for each promotion phase as explicit fields

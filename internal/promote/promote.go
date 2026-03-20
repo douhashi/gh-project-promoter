@@ -43,34 +43,27 @@ func Run(ctx context.Context, cfg *config.Config, items []github.ProjectItem, pr
 	}, nil
 }
 
-// buildPhaseResult creates a PhaseResult from a slice of PromoteResult,
-// ensuring the results slice is never nil.
-func buildPhaseResult(results []github.PromoteResult) github.PhaseResult {
-	if results == nil {
-		results = make([]github.PromoteResult, 0)
+// buildPhaseResult creates a PhaseResult from PhaseResults,
+// ensuring the slices are never nil.
+func buildPhaseResult(results github.PhaseResults) github.PhaseResult {
+	if results.Promoted == nil {
+		results.Promoted = make([]github.PromotedItem, 0)
 	}
-	promoted := 0
-	skipped := 0
-	for _, r := range results {
-		switch r.Action {
-		case "promoted":
-			promoted++
-		case "skipped":
-			skipped++
-		}
+	if results.Skipped == nil {
+		results.Skipped = make([]github.SkippedItem, 0)
 	}
 	return github.PhaseResult{
 		Summary: github.PhaseSummary{
-			Promoted: promoted,
-			Skipped:  skipped,
-			Total:    len(results),
+			Promoted: len(results.Promoted),
+			Skipped:  len(results.Skipped),
+			Total:    len(results.Promoted) + len(results.Skipped),
 		},
 		Results: results,
 	}
 }
 
-func planPhase(ctx context.Context, cfg *config.Config, items []github.ProjectItem, meta *github.ProjectMeta, promoter github.ItemPromoter) ([]github.PromoteResult, error) {
-	var results []github.PromoteResult
+func planPhase(ctx context.Context, cfg *config.Config, items []github.ProjectItem, meta *github.ProjectMeta, promoter github.ItemPromoter) (github.PhaseResults, error) {
+	var results github.PhaseResults
 	promoted := 0
 
 	for _, item := range items {
@@ -79,21 +72,19 @@ func planPhase(ctx context.Context, cfg *config.Config, items []github.ProjectIt
 		}
 
 		if cfg.PlanLimit > 0 && promoted >= cfg.PlanLimit {
-			results = append(results, github.PromoteResult{
+			results.Skipped = append(results.Skipped, github.SkippedItem{
 				Item:   item,
-				Action: "skipped",
 				Reason: "plan limit reached",
 			})
 			continue
 		}
 
 		if err := promoter.UpdateItemStatus(ctx, meta, item.ID, cfg.StatusPlan); err != nil {
-			return nil, fmt.Errorf("failed to promote item %s to %s: %w", item.ID, cfg.StatusPlan, err)
+			return results, fmt.Errorf("failed to promote item %s to %s: %w", item.ID, cfg.StatusPlan, err)
 		}
 
-		results = append(results, github.PromoteResult{
+		results.Promoted = append(results.Promoted, github.PromotedItem{
 			Item:     item,
-			Action:   "promoted",
 			ToStatus: cfg.StatusPlan,
 		})
 		promoted++
@@ -102,8 +93,8 @@ func planPhase(ctx context.Context, cfg *config.Config, items []github.ProjectIt
 	return results, nil
 }
 
-func doingPhase(ctx context.Context, cfg *config.Config, items []github.ProjectItem, meta *github.ProjectMeta, promoter github.ItemPromoter) ([]github.PromoteResult, error) {
-	var results []github.PromoteResult
+func doingPhase(ctx context.Context, cfg *config.Config, items []github.ProjectItem, meta *github.ProjectMeta, promoter github.ItemPromoter) (github.PhaseResults, error) {
+	var results github.PhaseResults
 
 	// Build set of repos that already have a doing item.
 	doingRepos := make(map[string]bool)
@@ -124,21 +115,19 @@ func doingPhase(ctx context.Context, cfg *config.Config, items []github.ProjectI
 
 		repo := extractRepo(item.URL)
 		if doingRepos[repo] {
-			results = append(results, github.PromoteResult{
+			results.Skipped = append(results.Skipped, github.SkippedItem{
 				Item:   item,
-				Action: "skipped",
 				Reason: "repository already has doing issue",
 			})
 			continue
 		}
 
 		if err := promoter.UpdateItemStatus(ctx, meta, item.ID, cfg.StatusDoing); err != nil {
-			return nil, fmt.Errorf("failed to promote item %s to %s: %w", item.ID, cfg.StatusDoing, err)
+			return results, fmt.Errorf("failed to promote item %s to %s: %w", item.ID, cfg.StatusDoing, err)
 		}
 
-		results = append(results, github.PromoteResult{
+		results.Promoted = append(results.Promoted, github.PromotedItem{
 			Item:     item,
-			Action:   "promoted",
 			ToStatus: cfg.StatusDoing,
 		})
 		doingRepos[repo] = true
