@@ -75,8 +75,7 @@ func TestPlanPhase_InboxToPlan(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	planResults := resp.Phases.Plan.Results
-	promoted := filterByAction(planResults, "promoted")
+	promoted := resp.Phases.Plan.Results.Promoted
 	if len(promoted) != 1 {
 		t.Fatalf("expected 1 promoted, got %d", len(promoted))
 	}
@@ -109,9 +108,8 @@ func TestPlanPhase_PlanLimitExceeded(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	planResults := resp.Phases.Plan.Results
-	promoted := filterByAction(planResults, "promoted")
-	skipped := filterByAction(planResults, "skipped")
+	promoted := resp.Phases.Plan.Results.Promoted
+	skipped := resp.Phases.Plan.Results.Skipped
 	if len(promoted) != 1 {
 		t.Fatalf("expected 1 promoted, got %d", len(promoted))
 	}
@@ -147,8 +145,11 @@ func TestPlanPhase_NoInboxItems(t *testing.T) {
 	if resp.Phases.Plan.Summary.Promoted != 0 {
 		t.Errorf("expected 0 plan promotions, got %d", resp.Phases.Plan.Summary.Promoted)
 	}
-	if len(resp.Phases.Plan.Results) != 0 {
-		t.Errorf("expected 0 plan results, got %d", len(resp.Phases.Plan.Results))
+	if len(resp.Phases.Plan.Results.Promoted) != 0 {
+		t.Errorf("expected 0 plan promoted, got %d", len(resp.Phases.Plan.Results.Promoted))
+	}
+	if len(resp.Phases.Plan.Results.Skipped) != 0 {
+		t.Errorf("expected 0 plan skipped, got %d", len(resp.Phases.Plan.Results.Skipped))
 	}
 }
 
@@ -167,7 +168,7 @@ func TestPlanPhase_PlanLimitZeroPromotesAll(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	promoted := filterByAction(resp.Phases.Plan.Results, "promoted")
+	promoted := resp.Phases.Plan.Results.Promoted
 	if len(promoted) != 3 {
 		t.Fatalf("expected 3 promoted, got %d", len(promoted))
 	}
@@ -188,7 +189,7 @@ func TestDoingPhase_ReadyToDoing(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	promoted := filterByAction(resp.Phases.Doing.Results, "promoted")
+	promoted := resp.Phases.Doing.Results.Promoted
 	if len(promoted) != 1 {
 		t.Fatalf("expected 1 promoted, got %d", len(promoted))
 	}
@@ -213,8 +214,8 @@ func TestDoingPhase_SameRepoSecondSkipped(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	promoted := filterByAction(resp.Phases.Doing.Results, "promoted")
-	skipped := filterByAction(resp.Phases.Doing.Results, "skipped")
+	promoted := resp.Phases.Doing.Results.Promoted
+	skipped := resp.Phases.Doing.Results.Skipped
 	if len(promoted) != 1 {
 		t.Fatalf("expected 1 promoted, got %d", len(promoted))
 	}
@@ -245,7 +246,7 @@ func TestDoingPhase_ExistingDoingRepoSkipped(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	skipped := filterByAction(resp.Phases.Doing.Results, "skipped")
+	skipped := resp.Phases.Doing.Results.Skipped
 	if len(skipped) != 1 {
 		t.Fatalf("expected 1 skipped, got %d", len(skipped))
 	}
@@ -267,7 +268,7 @@ func TestDoingPhase_DifferentReposBothPromoted(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	promoted := filterByAction(resp.Phases.Doing.Results, "promoted")
+	promoted := resp.Phases.Doing.Results.Promoted
 	if len(promoted) != 2 {
 		t.Fatalf("expected 2 promoted, got %d", len(promoted))
 	}
@@ -393,26 +394,28 @@ func TestRun_EmptyItems_ResultsNotNil(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if resp.Phases.Plan.Results == nil {
-		t.Error("plan results should not be nil")
+	if resp.Phases.Plan.Results.Promoted == nil {
+		t.Error("plan promoted should not be nil")
 	}
-	if resp.Phases.Doing.Results == nil {
-		t.Error("doing results should not be nil")
+	if resp.Phases.Plan.Results.Skipped == nil {
+		t.Error("plan skipped should not be nil")
 	}
-	if len(resp.Phases.Plan.Results) != 0 {
-		t.Errorf("plan results length = %d, want 0", len(resp.Phases.Plan.Results))
+	if resp.Phases.Doing.Results.Promoted == nil {
+		t.Error("doing promoted should not be nil")
 	}
-	if len(resp.Phases.Doing.Results) != 0 {
-		t.Errorf("doing results length = %d, want 0", len(resp.Phases.Doing.Results))
+	if resp.Phases.Doing.Results.Skipped == nil {
+		t.Error("doing skipped should not be nil")
 	}
-}
-
-func filterByAction(results []github.PromoteResult, action string) []github.PromoteResult {
-	var filtered []github.PromoteResult
-	for _, r := range results {
-		if r.Action == action {
-			filtered = append(filtered, r)
-		}
+	if len(resp.Phases.Plan.Results.Promoted) != 0 {
+		t.Errorf("plan promoted length = %d, want 0", len(resp.Phases.Plan.Results.Promoted))
 	}
-	return filtered
+	if len(resp.Phases.Doing.Results.Promoted) != 0 {
+		t.Errorf("doing promoted length = %d, want 0", len(resp.Phases.Doing.Results.Promoted))
+	}
+	if len(resp.Phases.Plan.Results.Skipped) != 0 {
+		t.Errorf("plan skipped length = %d, want 0", len(resp.Phases.Plan.Results.Skipped))
+	}
+	if len(resp.Phases.Doing.Results.Skipped) != 0 {
+		t.Errorf("doing skipped length = %d, want 0", len(resp.Phases.Doing.Results.Skipped))
+	}
 }

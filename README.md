@@ -67,31 +67,34 @@ ghpp promote --status-inbox "Todo" --status-plan "Planned"
   "phases": {
     "plan": {
       "summary": { "promoted": 3, "skipped": 1, "total": 4 },
-      "results": [
-        {
-          "item": { "id": "...", "title": "Issue title", "url": "https://...", "status": "Backlog" },
-          "action": "promoted",
-          "to_status": "Plan"
-        }
-      ]
+      "results": {
+        "promoted": [
+          {
+            "item": { "id": "...", "title": "Issue title", "url": "https://...", "status": "Backlog" },
+            "to_status": "Plan"
+          }
+        ],
+        "skipped": []
+      }
     },
     "doing": {
       "summary": { "promoted": 1, "skipped": 1, "total": 2 },
-      "results": [
-        {
-          "item": { "id": "...", "title": "Issue title", "url": "https://...", "status": "Ready" },
-          "action": "skipped",
-          "reason": "repository already has an item in doing"
-        }
-      ]
+      "results": {
+        "promoted": [],
+        "skipped": [
+          {
+            "item": { "id": "...", "title": "Issue title", "url": "https://...", "status": "Ready" },
+            "reason": "repository already has doing issue"
+          }
+        ]
+      }
     }
   }
 }
 ```
 
 - `phases.plan` / `phases.doing` は常にキーが存在（0件でも省略されない）
-- 各 `results` は0件の場合 `[]`（`null` ではない）
-- `action` は `"promoted"` または `"skipped"`
+- 各 `results.promoted` / `results.skipped` は0件の場合 `[]`（`null` ではない）
 
 ## 設定
 
