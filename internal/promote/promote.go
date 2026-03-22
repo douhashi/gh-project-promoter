@@ -3,11 +3,10 @@ package promote
 import (
 	"context"
 	"fmt"
-	"net/url"
-	"strings"
 
 	"github.com/douhashi/gh-project-promoter/internal/config"
 	"github.com/douhashi/gh-project-promoter/internal/github"
+	"github.com/douhashi/gh-project-promoter/internal/urlutil"
 )
 
 // Run executes both promotion phases and returns a structured response.
@@ -88,7 +87,7 @@ func planPhase(ctx context.Context, cfg *config.Config, items []github.ProjectIt
 
 		results.Promoted = append(results.Promoted, github.PromotedItem{
 			Item:     item,
-			Key:      extractKey(item.URL, "plan"),
+			Key:      urlutil.ExtractKey(item.URL, "plan"),
 			ToStatus: cfg.StatusPlan,
 		})
 		promoted++
@@ -106,7 +105,7 @@ func doingPhase(ctx context.Context, cfg *config.Config, items []github.ProjectI
 		if item.Status != cfg.StatusDoing {
 			continue
 		}
-		repo := extractRepo(item.URL)
+		repo := urlutil.ExtractRepo(item.URL)
 		if repo != "" {
 			doingRepos[repo] = true
 		}
@@ -117,7 +116,7 @@ func doingPhase(ctx context.Context, cfg *config.Config, items []github.ProjectI
 			continue
 		}
 
-		repo := extractRepo(item.URL)
+		repo := urlutil.ExtractRepo(item.URL)
 		if doingRepos[repo] {
 			results.Skipped = append(results.Skipped, github.SkippedItem{
 				Item:   item,
@@ -134,37 +133,11 @@ func doingPhase(ctx context.Context, cfg *config.Config, items []github.ProjectI
 
 		results.Promoted = append(results.Promoted, github.PromotedItem{
 			Item:     item,
-			Key:      extractKey(item.URL, "doing"),
+			Key:      urlutil.ExtractKey(item.URL, "doing"),
 			ToStatus: cfg.StatusDoing,
 		})
 		doingRepos[repo] = true
 	}
 
 	return results, nil
-}
-
-// extractKey builds a key string "{phase}-{owner}-{repo}-{number}" from a GitHub URL and phase name.
-func extractKey(rawURL string, phase string) string {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return ""
-	}
-	parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
-	if len(parts) < 4 {
-		return ""
-	}
-	return fmt.Sprintf("%s-%s-%s-%s", phase, parts[0], parts[1], parts[3])
-}
-
-// extractRepo extracts "owner/repo" from a GitHub issue/PR URL.
-func extractRepo(rawURL string) string {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return ""
-	}
-	parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
-	if len(parts) < 2 {
-		return ""
-	}
-	return parts[0] + "/" + parts[1]
 }

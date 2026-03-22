@@ -21,7 +21,8 @@
 │   ├── config/      # 環境変数・設定の読み込み
 │   ├── github/      # GitHub API クライアント
 │   ├── promote/     # 昇格ロジック
-│   └── demote/      # 降格ロジック
+│   ├── demote/      # 降格ロジック
+│   └── urlutil/     # GitHub URL のパースユーティリティ
 ├── docs/            # ドキュメント
 ├── .env.example     # 環境変数のサンプル
 └── go.mod
