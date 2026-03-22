@@ -3,12 +3,11 @@ package demote
 import (
 	"context"
 	"fmt"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/douhashi/gh-project-promoter/internal/config"
 	"github.com/douhashi/gh-project-promoter/internal/github"
+	"github.com/douhashi/gh-project-promoter/internal/urlutil"
 )
 
 // Run executes both demotion phases and returns a structured response.
@@ -90,7 +89,7 @@ func doingPhase(ctx context.Context, cfg *config.Config, items []github.ProjectI
 
 		results.Demoted = append(results.Demoted, github.DemotedItem{
 			Item:       item,
-			Key:        extractKey(item.URL, "doing"),
+			Key:        urlutil.ExtractKey(item.URL, "doing"),
 			FromStatus: cfg.StatusDoing,
 			ToStatus:   cfg.StatusReady,
 		})
@@ -123,24 +122,11 @@ func planPhase(ctx context.Context, cfg *config.Config, items []github.ProjectIt
 
 		results.Demoted = append(results.Demoted, github.DemotedItem{
 			Item:       item,
-			Key:        extractKey(item.URL, "plan"),
+			Key:        urlutil.ExtractKey(item.URL, "plan"),
 			FromStatus: cfg.StatusPlan,
 			ToStatus:   cfg.StatusInbox,
 		})
 	}
 
 	return results, nil
-}
-
-// extractKey builds a key string "{phase}-{owner}-{repo}-{number}" from a GitHub URL and phase name.
-func extractKey(rawURL string, phase string) string {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return ""
-	}
-	parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
-	if len(parts) < 4 {
-		return ""
-	}
-	return fmt.Sprintf("%s-%s-%s-%s", phase, parts[0], parts[1], parts[3])
 }
