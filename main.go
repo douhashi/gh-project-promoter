@@ -23,7 +23,7 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("ghpp - GitHub Project Promoter")
 		fmt.Println("Usage: ghpp <command>")
-		fmt.Println("Commands: promote")
+		fmt.Println("Commands: promote, demote")
 		return
 	}
 
@@ -38,6 +38,17 @@ func main() {
 		}
 		client := github.NewClient(cfg.Token)
 		if err := cmd.RunPromote(context.Background(), cfg, client); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+	case "demote":
+		cfg, err := config.LoadWithArgs(subArgs)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		client := github.NewClient(cfg.Token)
+		if err := cmd.RunDemote(context.Background(), cfg, client); err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}

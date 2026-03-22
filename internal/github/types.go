@@ -1,13 +1,16 @@
 package github
 
+import "time"
+
 // ProjectItem represents a single item in a GitHub Project.
 type ProjectItem struct {
-	ID     string   `json:"id"`
-	Title  string   `json:"title"`
-	URL    string   `json:"url"`
-	Status string   `json:"status"`
-	Body   string   `json:"body"`
-	Labels []string `json:"labels"`
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	URL       string    `json:"url"`
+	Status    string    `json:"status"`
+	Body      string    `json:"body"`
+	Labels    []string  `json:"labels"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // ProjectMeta holds project-level metadata needed for mutations.
@@ -60,4 +63,44 @@ type PromotePhases struct {
 type PromoteResponse struct {
 	Summary PhaseSummary  `json:"summary"`
 	Phases  PromotePhases `json:"phases"`
+}
+
+// DemotedItem represents a single item that was demoted.
+type DemotedItem struct {
+	Item       ProjectItem `json:"item"`
+	Key        string      `json:"key,omitempty"`
+	FromStatus string      `json:"from_status"`
+	ToStatus   string      `json:"to_status"`
+}
+
+// DemotePhaseResults groups demoted and skipped items for one phase.
+type DemotePhaseResults struct {
+	Demoted []DemotedItem `json:"demoted"`
+	Skipped []SkippedItem `json:"skipped"`
+}
+
+// DemoteSummary holds counts for a single demote phase or the overall demote response.
+type DemoteSummary struct {
+	Demoted int `json:"demoted"`
+	Skipped int `json:"skipped"`
+	Total   int `json:"total"`
+}
+
+// DemotePhaseResult groups the summary and individual results for one demote phase.
+type DemotePhaseResult struct {
+	Summary DemoteSummary      `json:"summary"`
+	Results DemotePhaseResults `json:"results"`
+}
+
+// DemotePhases holds results for each demotion phase as explicit fields
+// so that both keys always appear in JSON output, even when empty.
+type DemotePhases struct {
+	Doing DemotePhaseResult `json:"doing"`
+	Plan  DemotePhaseResult `json:"plan"`
+}
+
+// DemoteResponse is the top-level JSON output of the demote command.
+type DemoteResponse struct {
+	Summary DemoteSummary `json:"summary"`
+	Phases  DemotePhases  `json:"phases"`
 }

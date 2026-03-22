@@ -20,10 +20,31 @@
 ├── internal/
 │   ├── config/      # 環境変数・設定の読み込み
 │   ├── github/      # GitHub API クライアント
-│   └── promote/     # 昇格ロジック
+│   ├── promote/     # 昇格ロジック
+│   └── demote/      # 降格ロジック
 ├── docs/            # ドキュメント
 ├── .env.example     # 環境変数のサンプル
 └── go.mod
+```
+
+## コマンド
+
+### promote
+
+滞留 Issue を次のステータスへ昇格させる。
+
+```
+ghpp promote [flags]
+```
+
+### demote
+
+滞留 Issue を前のステータスへ降格させる。`--stale-threshold` で設定した期間（デフォルト: 2h）以上更新がないアイテムが対象。
+
+```
+ghpp demote [flags]
+  --stale-threshold <duration>  降格対象とみなす滞留期間 (env: GHPP_STALE_THRESHOLD, default: 2h)
+  --dry-run                     実際には更新せずに降格対象を表示する
 ```
 
 ## ビルド・実行

@@ -89,10 +89,11 @@ type fieldValueNode struct {
 type itemContent struct {
 	TypeName string `graphql:"__typename"`
 	Issue    struct {
-		Title  string
-		URL    string `graphql:"url"`
-		Body   string
-		Labels struct {
+		Title     string
+		URL       string `graphql:"url"`
+		Body      string
+		UpdatedAt githubv4.DateTime
+		Labels    struct {
 			Nodes []struct {
 				Name string
 			}
@@ -310,6 +311,7 @@ func toProjectItem(node itemNode) ProjectItem {
 		item.Title = node.Content.Issue.Title
 		item.URL = node.Content.Issue.URL
 		item.Body = node.Content.Issue.Body
+		item.UpdatedAt = node.Content.Issue.UpdatedAt.Time
 		for _, l := range node.Content.Issue.Labels.Nodes {
 			item.Labels = append(item.Labels, l.Name)
 		}
