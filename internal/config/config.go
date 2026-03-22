@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 const (
-	DefaultStatusInbox = "Backlog"
-	DefaultStatusPlan  = "Plan"
-	DefaultStatusReady = "Ready"
-	DefaultStatusDoing = "In progress"
-	DefaultPlanLimit   = 3
+	DefaultStatusInbox    = "Backlog"
+	DefaultStatusPlan     = "Plan"
+	DefaultStatusReady    = "Ready"
+	DefaultStatusDoing    = "In progress"
+	DefaultPlanLimit      = 3
+	DefaultStaleThreshold = 2 * time.Hour
 )
 
 // getEnvOrDefault returns the value of the environment variable named by the key,
@@ -26,14 +28,16 @@ func getEnvOrDefault(key, defaultValue string) string {
 
 // Config holds application configuration loaded from environment variables.
 type Config struct {
-	Token         string
-	Owner         string
-	ProjectNumber int
-	StatusInbox   string
-	StatusPlan    string
-	StatusReady   string
-	StatusDoing   string
-	PlanLimit     int
+	Token          string
+	Owner          string
+	ProjectNumber  int
+	StatusInbox    string
+	StatusPlan     string
+	StatusReady    string
+	StatusDoing    string
+	PlanLimit      int
+	StaleThreshold time.Duration
+	DryRun         bool
 }
 
 // Load reads environment variables and returns a Config.
@@ -56,6 +60,8 @@ func LoadWithArgs(args []string) (*Config, error) {
 	statusReady := fs.String("status-ready", "", "Status name for ready (env: GHPP_STATUS_READY)")
 	statusDoing := fs.String("status-doing", "", "Status name for doing (env: GHPP_STATUS_DOING)")
 	planLimit := fs.String("plan-limit", "", "Plan promotion limit (env: GHPP_PLAN_LIMIT)")
+	staleThreshold := fs.String("stale-threshold", "", "Stale threshold duration for demote (env: GHPP_STALE_THRESHOLD, default: 2h)")
+	dryRun := fs.Bool("dry-run", false, "Dry-run mode: do not actually update items")
 
 	if args != nil {
 		if err := fs.Parse(args); err != nil {
@@ -115,14 +121,29 @@ func LoadWithArgs(args []string) (*Config, error) {
 		}
 	}
 
+	// Resolve stale threshold
+	resolvedStaleThreshold := DefaultStaleThreshold
+	resolvedStaleThresholdStr := resolve("stale-threshold", *staleThreshold, "GHPP_STALE_THRESHOLD", "")
+	if resolvedStaleThresholdStr != "" {
+		resolvedStaleThreshold, err = time.ParseDuration(resolvedStaleThresholdStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse GHPP_STALE_THRESHOLD: %w", err)
+		}
+	}
+
+	// Resolve dry-run (flag only, no env var)
+	resolvedDryRun := *dryRun
+
 	return &Config{
-		Token:         resolvedToken,
-		Owner:         resolvedOwner,
-		ProjectNumber: resolvedProjectNumber,
-		StatusInbox:   resolvedStatusInbox,
-		StatusPlan:    resolvedStatusPlan,
-		StatusReady:   resolvedStatusReady,
-		StatusDoing:   resolvedStatusDoing,
-		PlanLimit:     resolvedPlanLimit,
+		Token:          resolvedToken,
+		Owner:          resolvedOwner,
+		ProjectNumber:  resolvedProjectNumber,
+		StatusInbox:    resolvedStatusInbox,
+		StatusPlan:     resolvedStatusPlan,
+		StatusReady:    resolvedStatusReady,
+		StatusDoing:    resolvedStatusDoing,
+		PlanLimit:      resolvedPlanLimit,
+		StaleThreshold: resolvedStaleThreshold,
+		DryRun:         resolvedDryRun,
 	}, nil
 }
